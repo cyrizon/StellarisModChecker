@@ -17,8 +17,29 @@
                    FontSize="20" 
                    HorizontalAlignment="Center"/>
         
+        <TextBlock Text="{Binding CurrentVersion, StringFormat='Version: {0}'}"
+                   HorizontalAlignment="Center"
+                   FontSize="12"
+                   Opacity="0.7"/>
+        
         <Button Content="Load Mods" 
                 Command="{Binding LoadModsCommand}"
                 HorizontalAlignment="Center"/>
+        
+        <!-- Section de mise à jour -->
+        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,20,0,0">
+            <StackPanel Spacing="10">
+                <TextBlock Text="{Binding UpdateMessage}" HorizontalAlignment="Center"/>
+                
+                <Button Content="Vérifier les mises à jour"
+                        Command="{Binding CheckForUpdatesCommand}"
+                        HorizontalAlignment="Center"/>
+                
+                <Button Content="Installer la mise à jour"
+                        Command="{Binding InstallUpdateCommand}"
+                        HorizontalAlignment="Center"
+                        IsVisible="{Binding UpdateAvailable}"/>
+            </StackPanel>
+        </Border>
     </StackPanel>
 </Window>
