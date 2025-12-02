@@ -20,13 +20,15 @@ vpk pack -u StellarisModChecker -v 1.0.2 -p .\bin\Release\net9.0\win-x64\publish
 # STEP 4 : CREATE RELEASE ON GITHUB AND UPLOAD FILES
 ```
 GitHub Release v0.1.0
-├── StellarisModChecker-0.1.0-win-Setup.exe (pour nouveaux utilisateurs)
-├── StellarisModChecker-0.1.0-win-full.nupkg
-└── RELEASES
+├── releases.win.json (INDISPENSABLE - détection des mises à jour)
+├── RELEASES (INDISPENSABLE - format legacy)
+├── StellarisModChecker-0.1.0-full.nupkg
+└── StellarisModChecker-win-Setup.exe (pour nouveaux utilisateurs)
 
 GitHub Release v0.1.1
-├── StellarisModChecker-0.1.1-win-Setup.exe
-├── StellarisModChecker-0.1.1-win-delta.nupkg (seulement les changements)
-├── StellarisModChecker-0.1.1-win-full.nupkg
-└── RELEASES (mis à jour avec les 2 versions)
+├── releases.win.json (INDISPENSABLE - mis à jour avec toutes les versions)
+├── RELEASES (INDISPENSABLE - mis à jour)
+├── StellarisModChecker-0.1.1-delta.nupkg (mise à jour différentielle - plus léger)
+├── StellarisModChecker-0.1.1-full.nupkg (package complet)
+└── StellarisModChecker-win-Setup.exe
 ```
