@@ -1,0 +1,78 @@
+CREATE TABLE `mods` (
+  `id` char(36) NOT NULL,
+  `pdxId` varchar(255),
+  `steamId` varchar(255),
+  `gameRegistryId` text,
+  `name` varchar(255),
+  `displayName` varchar(255),
+  `descriptionDeprecated` text,
+  `thumbnailUrl` text,
+  `thumbnailPath` text,
+  `version` varchar(255),
+  `tags` json DEFAULT '[]',
+  `requiredVersion` varchar(255),
+  `arch` text,
+  `os` text,
+  `repositoryPath` text,
+  `dirPath` text,
+  `archivePath` text,
+  `status` text NOT NULL,
+  `source` text NOT NULL,
+  `cause` text DEFAULT null,
+  `timeUpdated` integer,
+  `isNew` boolean,
+  `createdDate` datetime,
+  `subscribedDate` datetime,
+  `size` integer,
+  `metadataId` varchar(255),
+  `remotePdxId` varchar(255),
+  `remoteSteamId` varchar(255),
+  `metadataVersion` varchar(255),
+  `isMetadataApplied` boolean NOT NULL DEFAULT '0',
+  `metadataStatus` text NOT NULL DEFAULT 'not_applied'
+    CHECK(`metadataStatus` IN 
+      ('not_applied','missing','parsing_error','applied','validation_error')),
+  `metadataGameId` varchar(255),
+  `descriptionPdx` varchar(255),
+  `descriptionSteam` varchar(255),
+  `shortDescriptionPdx` varchar(255),
+  `keepLatest` boolean NOT NULL DEFAULT '1',
+  `userVersion` boolean DEFAULT null,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE playsets (
+  id char(36) NOT NULL,
+  name varchar(255) NOT NULL,
+  isActive boolean,
+  loadOrder varchar(255),
+  pdxId int,
+  pdxUserId char(36),
+  createdOn datetime NOT NULL,
+  updatedOn datetime,
+  syncedOn datetime,
+  lastServerChecksum text,
+  isRemoved boolean NOT NULL DEFAULT false,
+  hasNotApprovedChanges boolean NOT NULL DEFAULT '0',
+  syncState varchar(255),
+  state text NOT NULL DEFAULT 'private'
+    CHECK(state IN ('private','removedByUser','public','disabledByManager')),
+  owned boolean NOT NULL DEFAULT '1',
+  author varchar(255) NOT NULL DEFAULT '',
+  subscribersCount integer NOT NULL DEFAULT '0',
+  ratingsCount integer NOT NULL DEFAULT '0',
+  thumbnailFileUrl varchar(255),
+  description varchar(255) DEFAULT '',
+  offDisk boolean NOT NULL DEFAULT '0',
+  PRIMARY KEY (id),
+  CONSTRAINT uq_pdxId UNIQUE (pdxId)
+);
+
+CREATE TABLE `playsets_mods` (
+  `playsetId` char(36) NOT NULL,
+  `modId` char(36) NOT NULL,
+  `enabled` boolean DEFAULT '1',
+  `position` integer,
+  FOREIGN KEY(`playsetId`) REFERENCES `playsets`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY(`modId`) REFERENCES `mods`(`id`) ON DELETE CASCADE
+);
