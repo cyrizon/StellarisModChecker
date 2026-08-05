@@ -32,6 +32,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private Playset? _selectedPlayset;
 
+    [ObservableProperty]
+    private ObservableCollection<PlaysetTabViewModel> _tabs = new();
+    
+    [ObservableProperty]
+    private PlaysetTabViewModel? _selectedTab;
+
     public MainWindowViewModel()
     {
         _updateService = new UpdateService();
@@ -75,10 +81,19 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void LoadMods()
     {
-        // TODO: Implémenter la logique de chargement des mods
-        if (SelectedPlayset != null)
+        if (SelectedPlayset == null) return;
+
+        var existingTab = Tabs.FirstOrDefault(t => t.Id == SelectedPlayset.Id);
+
+        if (existingTab != null)
         {
-            WelcomeMessage = $"Loading mods for : {SelectedPlayset.Name}...";
+            SelectedTab = existingTab;
+        }
+        else
+        {
+            var newTab = new PlaysetTabViewModel(SelectedPlayset);
+            Tabs.Add(newTab);
+            SelectedTab = newTab;
         }
     }
 

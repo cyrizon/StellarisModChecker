@@ -12,42 +12,53 @@
         <vm:MainWindowViewModel />
     </Design.DataContext>
     
-    <StackPanel Margin="20" Spacing="10">
-        <TextBlock Text="{Binding WelcomeMessage}" 
-                   FontSize="20" 
-                   HorizontalAlignment="Center"/>
-        
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
-            <TextBlock Text="Playset :" VerticalAlignment="Center"/>
-            <ComboBox ItemsSource="{Binding Playsets}"
-                      SelectedItem="{Binding SelectedPlayset}"
-                      DisplayMemberBinding="{Binding Name}"
-                      Width="200"/>
+    <DockPanel Margin="15">
+        <!-- Barre de contrôle supérieure (Boutons + Mises à jour) -->
+        <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,15">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="10">
+                <TextBlock Text="Playset :" VerticalAlignment="Center"/>
+                <ComboBox ItemsSource="{Binding Playsets}"
+                          SelectedItem="{Binding SelectedPlayset}"
+                          DisplayMemberBinding="{Binding Name}"
+                          Width="220"/>
+                
+                <Button Content="Load Mods" 
+                        Command="{Binding LoadModsCommand}"/>
+            </StackPanel>
+
+            <TextBlock Text="{Binding WelcomeMessage}" 
+                       HorizontalAlignment="Center"
+                       FontSize="12" Opacity="0.7"/>
         </StackPanel>
-        
-        <TextBlock Text="{Binding CurrentVersion, StringFormat='Version: {0}'}"
-                   HorizontalAlignment="Center"
-                   FontSize="12"
-                   Opacity="0.7"/>
-        
-        <Button Content="Load Mods" 
-                Command="{Binding LoadModsCommand}"
-                HorizontalAlignment="Center"/>
-        
-        <!-- Section de mise à jour -->
-        <Border BorderBrush="Gray" BorderThickness="1" Padding="10" Margin="0,20,0,0">
-            <StackPanel Spacing="10">
-                <TextBlock Text="{Binding UpdateMessage}" HorizontalAlignment="Center"/>
-                
-                <Button Content="Vérifier les mises à jour"
-                        Command="{Binding CheckForUpdatesCommand}"
-                        HorizontalAlignment="Center"/>
-                
-                <Button Content="Installer la mise à jour"
-                        Command="{Binding InstallUpdateCommand}"
-                        HorizontalAlignment="Center"
-                        IsVisible="{Binding UpdateAvailable}"/>
+
+        <!-- Section de mise à jour (Bas de fenêtre) -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="Gray" BorderThickness="1" Padding="8" Margin="0,10,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="15">
+                <TextBlock Text="{Binding UpdateMessage}" VerticalAlignment="Center"/>
+                <Button Content="Vérifier les MAJ" Command="{Binding CheckForUpdatesCommand}"/>
+                <Button Content="Installer la MAJ" Command="{Binding InstallUpdateCommand}" IsVisible="{Binding UpdateAvailable}"/>
             </StackPanel>
         </Border>
-    </StackPanel>
+
+        <!-- Onglets dynamiques des Playsets -->
+        <TabControl ItemsSource="{Binding Tabs}" 
+                    SelectedItem="{Binding SelectedTab}">
+            <TabControl.ItemTemplate>
+                <!-- Entête de l'onglet -->
+                <DataTemplate x:DataType="vm:PlaysetTabViewModel">
+                    <TextBlock Text="{Binding Header}" />
+                </DataTemplate>
+            </TabControl.ItemTemplate>
+            <TabControl.ContentTemplate>
+                <!-- Contenu temporaire de l'onglet (pour l'étape 1) -->
+                <DataTemplate x:DataType="vm:PlaysetTabViewModel">
+                    <StackPanel Margin="20" Spacing="10">
+                        <TextBlock Text="{Binding Header}" FontSize="18" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding Id, StringFormat='ID du playset : {0}'}" Opacity="0.6"/>
+                        <TextBlock Text="Les mods s'afficheront ici..." Margin="0,20,0,0" FontStyle="Italic"/>
+                    </StackPanel>
+                </DataTemplate>
+            </TabControl.ContentTemplate>
+        </TabControl>
+    </DockPanel>
 </Window>
