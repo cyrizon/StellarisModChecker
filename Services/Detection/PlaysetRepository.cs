@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
+using StellarisModChecker.Models;
 
 public class PlaysetRepository : IPlaysetRepository
 {
@@ -48,9 +49,11 @@ public class PlaysetRepository : IPlaysetRepository
     {
         return new List<string>(playsets.Keys);
     }
-
-    public void LoadPlaysetContents(string playsetId)
+    
+    public List<Mod> GetModsForPlayset(string playsetId)
     {
+        var mods = new List<Mod>();
+
         using (SqliteConnection db = new SqliteConnection($"Filename={_playsetPath}"))
         {
             db.Open();
@@ -62,23 +65,29 @@ public class PlaysetRepository : IPlaysetRepository
                 WHERE pm.playsetId = @PlaysetId
                 ORDER BY pm.position ASC
             ";
+
             using (SqliteCommand selectCommand = new SqliteCommand(selectModsQuery, db))
             {
                 selectCommand.Parameters.AddWithValue("@PlaysetId", playsetId);
+
                 using (SqliteDataReader query = selectCommand.ExecuteReader())
                 {
                     while (query.Read())
                     {
-                        string modId = query.GetString(0);
-                        string displayName = query.IsDBNull(1) ? "" : query.GetString(1);
-                        string version = query.IsDBNull(2) ? "" : query.GetString(2);
-                        bool enabled = !query.IsDBNull(3) && query.GetBoolean(3);
-                        int? position = query.IsDBNull(4) ? null : query.GetInt32(4);
-                        Console.WriteLine($"Mod in playset {playsetId}: id={modId}, displayName={displayName}, version={version}, enabled={enabled}, position={position}");
+                        mods.Add(new Mod
+                        {
+                            SteamId = query.IsDBNull(0) ? "" : query.GetString(0),
+                            DisplayName = query.IsDBNull(1) ? "Mod sans nom" : query.GetString(1),
+                            Version = query.IsDBNull(2) ? "N/A" : query.GetString(2),
+                            IsEnabled = !query.IsDBNull(3) && query.GetBoolean(3),
+                            Position = query.IsDBNull(4) ? null : query.GetInt32(4)
+                        });
                     }
                 }
             }
             db.Close();
         }
+
+        return mods;
     }
 }

@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using StellarisModChecker.Services;
 using System.Threading.Tasks;
 using StellarisModChecker.Models;
+using StellarisModChecker.Services.Detection;
 
 namespace StellarisModChecker.ViewModels;
 
@@ -73,7 +74,6 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (value != null)
         {
-            _playsetDetectionService.LoadPlaysetContents(value.Id);
             WelcomeMessage = $"Selected playset : {value.Name}";
         }
     }
@@ -91,7 +91,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         else
         {
-            var newTab = new PlaysetTabViewModel(SelectedPlayset);
+            var newTab = new PlaysetTabViewModel(SelectedPlayset, _playsetDetectionService);
             Tabs.Add(newTab);
             SelectedTab = newTab;
         }

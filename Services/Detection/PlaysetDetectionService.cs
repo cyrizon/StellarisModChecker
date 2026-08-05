@@ -3,17 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using StellarisModChecker.Models;
 
-class PlaysetDetectionService
+namespace StellarisModChecker.Services.Detection;
+
+public class PlaysetDetectionService
 {
     private readonly IPlaysetRepository _playsetRepository;
 
     public string DetectedOS { get; private set; }
-
-    private const string WindowsModsPath = @"\Paradox Interactive\Stellaris";
-    private const string LinuxModsPath = @"/.local/share/Paradox Interactive/Stellaris";
-    private const string MacOSModsPath = @"/Library/Application Support/Paradox Interactive/Stellaris";
-
+    
     private const string PlaysetFileName = "launcher-v2.sqlite";
 
     private string _playsetPath;
@@ -100,8 +99,8 @@ class PlaysetDetectionService
         return _playsetRepository.GetPlaysets();
     }
 
-    public void LoadPlaysetContents(string playsetId)
+    public List<Mod> GetModsForPlayset(string playsetId)
     {
-        _playsetRepository.LoadPlaysetContents(playsetId);
+        return _playsetRepository.GetModsForPlayset(playsetId);
     }
 }
