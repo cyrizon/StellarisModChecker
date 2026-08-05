@@ -7,12 +7,12 @@ public class PlaysetRepository : IPlaysetRepository
     private readonly string _playsetPath;
     private Dictionary<string, string> playsets = new Dictionary<string, string>();
 
-    public PlaysetRepository(string playsetPath) : base(playsetPath)
+    public PlaysetRepository(string playsetPath)
     {
         _playsetPath = playsetPath;
     }
 
-    public override void LoadPlaysets()
+    public void LoadPlaysets()
     {
         using (SqliteConnection db = new SqliteConnection($"Filename={_playsetPath}"))
         {
@@ -39,7 +39,12 @@ public class PlaysetRepository : IPlaysetRepository
         }
     }
 
-    public override List<string> GetPlaysetsID()
+    public Dictionary<string, string> GetPlaysets()
+    {
+        return playsets;
+    }
+
+    public List<string> GetPlaysetsID()
     {
         return new List<string>(playsets.Keys);
     }
@@ -51,7 +56,7 @@ public class PlaysetRepository : IPlaysetRepository
             db.Open();
 
             string selectModsQuery = @"
-                SELECT m.steamId, m.name, m.displayName, m.version, pm.enabled, pm.position
+                SELECT m.steamId, m.displayName, m.version, pm.enabled, pm.position
                 FROM playsets_mods pm
                 JOIN mods m ON pm.modId = m.id
                 WHERE pm.playsetId = @PlaysetId
@@ -65,12 +70,11 @@ public class PlaysetRepository : IPlaysetRepository
                     while (query.Read())
                     {
                         string modId = query.GetString(0);
-                        string modName = query.IsDBNull(1) ? "" : query.GetString(1);
-                        string displayName = query.IsDBNull(2) ? "" : query.GetString(2);
-                        string version = query.IsDBNull(3) ? "" : query.GetString(3);
-                        bool enabled = !query.IsDBNull(4) && query.GetBoolean(4);
-                        int? position = query.IsDBNull(5) ? null : query.GetInt32(5);
-                        Console.WriteLine($"Mod in playset {playsetId}: id={modId}, name={modName}, displayName={displayName}, version={version}, enabled={enabled}, position={position}");
+                        string displayName = query.IsDBNull(1) ? "" : query.GetString(1);
+                        string version = query.IsDBNull(2) ? "" : query.GetString(2);
+                        bool enabled = !query.IsDBNull(3) && query.GetBoolean(3);
+                        int? position = query.IsDBNull(4) ? null : query.GetInt32(4);
+                        Console.WriteLine($"Mod in playset {playsetId}: id={modId}, displayName={displayName}, version={version}, enabled={enabled}, position={position}");
                     }
                 }
             }

@@ -10,8 +10,5 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = new MainWindowViewModel();
-        PlaysetDetectionService playsetDetectionService = new PlaysetDetectionService();
-        playsetDetectionService.LoadPlaysets();
-        playsetDetectionService.LoadPlaysetContents(playsetDetectionService.GetPlaysetsID()[0]);
     }
 }

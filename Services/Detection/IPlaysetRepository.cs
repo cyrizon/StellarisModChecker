@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 
-public abstract class IPlaysetRepository
+public interface IPlaysetRepository
 {
-    public IPlaysetRepository(string playsetPath)
-    {
-    }
-
-    public abstract void LoadPlaysets();
-    public abstract List<string> GetPlaysetsID();
+    void LoadPlaysets();
+    Dictionary<string, string>  GetPlaysets();
+    List<string> GetPlaysetsID();
+    void LoadPlaysetContents(string playsetId);
 }

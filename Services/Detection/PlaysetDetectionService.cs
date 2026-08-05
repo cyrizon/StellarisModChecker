@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 class PlaysetDetectionService
@@ -60,7 +61,7 @@ class PlaysetDetectionService
                 playsetDirectory = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Paradox Interactive\Stellaris");
                 break;
             case "Linux":
-                playsetDirectory = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + @"/.local/share/Paradox Interactive/Stellaris");
+                playsetDirectory = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"/.local/share/Paradox Interactive/Stellaris");
                 break;
             case "macOS":
                 playsetDirectory = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + @"/Library/Application Support/Paradox Interactive/Stellaris");
@@ -93,16 +94,14 @@ class PlaysetDetectionService
     {
         return new List<string>(_playsetRepository.GetPlaysetsID());
     }
+    
+    public Dictionary<string, string> GetPlaysets()
+    {
+        return _playsetRepository.GetPlaysets();
+    }
 
     public void LoadPlaysetContents(string playsetId)
     {
-        if (_playsetRepository is PlaysetRepository repository)
-        {
-            repository.LoadPlaysetContents(playsetId);
-        }
-        else
-        {
-            throw new InvalidOperationException("Playset repository does not support loading playset contents.");
-        }
+        _playsetRepository.LoadPlaysetContents(playsetId);
     }
 }
