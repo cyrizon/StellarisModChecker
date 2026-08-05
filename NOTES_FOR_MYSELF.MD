@@ -14,7 +14,13 @@ dotnet publish -c Release -r win-x64 --self-contained
 
 # STEP 3 : CREATE PACKAGE
 ```
-vpk pack -u StellarisModChecker -v 1.0.2 -p .\bin\Release\net9.0\win-x64\publish -e StellarisModChecker.exe -o .\Releases
+vpk pack -u StellarisModChecker -v 0.1.2 -p .\bin\Release\net9.0\win-x64\publish -e StellarisModChecker.exe -o .\Releases
+```
+
+OR (Cross-compiling from Linux)
+
+```
+vpk [win] pack -u StellarisModChecker -v 0.1.2 -r win-x64 -p ./bin/Release/net9.0/win-x64/publish -e StellarisModChecker.exe -o ./Releases
 ```
 
 # STEP 4 : CREATE RELEASE ON GITHUB AND UPLOAD FILES
