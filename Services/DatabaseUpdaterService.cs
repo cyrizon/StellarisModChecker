@@ -2,13 +2,16 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace StellarisModChecker.Services;
 
 public class DatabaseMetadata
 {
+    [JsonPropertyName("version")]
     public int Version { get; set; }
+    [JsonPropertyName("download_url")]
     public string DownloadUrl { get; set; } = string.Empty;
 }
 
@@ -47,7 +50,7 @@ public class DatabaseUpdaterService
             // 1. Récupérer les métadonnées sur GitHub
             string jsonRemote = await _httpClient.GetStringAsync(MetadataUrl);
             var remoteMeta = JsonSerializer.Deserialize<DatabaseMetadata>(jsonRemote, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
+            
             if (remoteMeta == null || string.IsNullOrEmpty(remoteMeta.DownloadUrl)) return;
 
             // 2. Vérifier la version locale
@@ -68,6 +71,7 @@ public class DatabaseUpdaterService
 
                 Console.WriteLine("[BDD Sync] Mise à jour de la BDD effectuée avec succès !");
             }
+            Console.WriteLine("[BDD Sync] Base de données à jour !");
         }
         catch (Exception ex)
         {
