@@ -6,13 +6,14 @@ using CommunityToolkit.Mvvm.Input;
 using StellarisModChecker.Services;
 using System.Threading.Tasks;
 using StellarisModChecker.Models;
+using StellarisModChecker.Services.Detection;
 
 namespace StellarisModChecker.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly UpdateService _updateService;
-    private readonly PlaysetDetectionService _playsetDetectionService;
+    private PlaysetDetectionService? _playsetDetectionService;
 
     [ObservableProperty]
     private string _welcomeMessage = "Welcome to Stellaris Mod Checker!";
@@ -41,16 +42,27 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         _updateService = new UpdateService();
-        _playsetDetectionService = new PlaysetDetectionService();
-        
         _currentVersion = _updateService.CurrentVersion;
+        
         _ = CheckForUpdatesAsync();
+
+        _ = InitializeAsync();
+    }
+    
+    private async Task InitializeAsync()
+    {
+        var dbUpdater = new DatabaseUpdaterService();
+        await dbUpdater.CheckAndDownloadDatabaseAsync();
+
+        _playsetDetectionService = new PlaysetDetectionService();
 
         LoadPlaysets();
     }
 
     private void LoadPlaysets()
     {
+        if (_playsetDetectionService == null) return;
+        
         _playsetDetectionService.LoadPlaysets();
 
         Dictionary<string, string> playsetData = _playsetDetectionService.GetPlaysets();
@@ -73,7 +85,6 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (value != null)
         {
-            _playsetDetectionService.LoadPlaysetContents(value.Id);
             WelcomeMessage = $"Selected playset : {value.Name}";
         }
     }
@@ -81,7 +92,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void LoadMods()
     {
-        if (SelectedPlayset == null) return;
+        if (SelectedPlayset == null || _playsetDetectionService == null) return;
 
         var existingTab = Tabs.FirstOrDefault(t => t.Id == SelectedPlayset.Id);
 
@@ -91,7 +102,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         else
         {
-            var newTab = new PlaysetTabViewModel(SelectedPlayset);
+            var newTab = new PlaysetTabViewModel(SelectedPlayset, _playsetDetectionService);
             Tabs.Add(newTab);
             SelectedTab = newTab;
         }

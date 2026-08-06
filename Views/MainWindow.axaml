@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:StellarisModChecker.ViewModels"
+        xmlns:models="using:StellarisModChecker.Models"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="StellarisModChecker.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -44,19 +45,83 @@
         <TabControl ItemsSource="{Binding Tabs}" 
                     SelectedItem="{Binding SelectedTab}">
             <TabControl.ItemTemplate>
-                <!-- Entête de l'onglet -->
                 <DataTemplate x:DataType="vm:PlaysetTabViewModel">
                     <TextBlock Text="{Binding Header}" />
                 </DataTemplate>
             </TabControl.ItemTemplate>
+            
             <TabControl.ContentTemplate>
-                <!-- Contenu temporaire de l'onglet (pour l'étape 1) -->
                 <DataTemplate x:DataType="vm:PlaysetTabViewModel">
-                    <StackPanel Margin="20" Spacing="10">
-                        <TextBlock Text="{Binding Header}" FontSize="18" FontWeight="Bold"/>
-                        <TextBlock Text="{Binding Id, StringFormat='ID du playset : {0}'}" Opacity="0.6"/>
-                        <TextBlock Text="Les mods s'afficheront ici..." Margin="0,20,0,0" FontStyle="Italic"/>
-                    </StackPanel>
+                    <DockPanel Margin="10">
+                        <!-- En-tête de l'onglet avec résumé + bouton de rafraîchissement -->
+                        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                            <Button DockPanel.Dock="Right" 
+                                    Content="Vérifier à nouveau" 
+                                    Command="{Binding CheckMissingModsCommand}"
+                                    IsEnabled="{Binding !IsChecking}"/>
+                            
+                            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Header}" FontSize="16" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding Mods.Count, StringFormat='({0} mods)'}" 
+                                           VerticalAlignment="Center" Opacity="0.6"/>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <!-- Zone principale découpée en 2 colonnes -->
+                        <Grid ColumnDefinitions="*, 5, *">
+                            
+                            <!-- CÔTÉ GAUCHE : Tous les mods du playset -->
+                            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Padding="5" CornerRadius="4">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Top" Text="Mods du Playset" FontWeight="SemiBold" Margin="5,0,0,5"/>
+                                    
+                                    <DataGrid ItemsSource="{Binding Mods}"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True"
+                                              CanUserResizeColumns="True"
+                                              GridLinesVisibility="All"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="#" Binding="{Binding Position}" Width="45" CanUserResize="True" />
+                                            <DataGridCheckBoxColumn Header="Actif" Binding="{Binding IsEnabled}" Width="55" CanUserResize="True" />
+                                            <DataGridTextColumn Header="Nom du Mod" Binding="{Binding DisplayName}" Width="250" MinWidth="100" CanUserResize="True" />
+                                            <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="90" CanUserResize="True" />
+                                            <DataGridTextColumn Header="Steam ID" Binding="{Binding SteamId}" Width="130" CanUserResize="True" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </DockPanel>
+                            </Border>
+
+                            <!-- Séparateur redimensionnable à la souris -->
+                            <GridSplitter Grid.Column="1" Background="Transparent" ResizeDirection="Columns"/>
+
+                            <!-- CÔTÉ DROIT : Mods manquants -->
+                            <Border Grid.Column="2" BorderBrush="#D32F2F" BorderThickness="1" Padding="5" CornerRadius="4">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="5" Margin="5,0,0,5">
+                                        <TextBlock Text="Mods Manquants / Problématiques" FontWeight="SemiBold" Foreground="#D32F2F"/>
+                                        <TextBlock Text="{Binding MissingMods.Count, StringFormat='({0})'}" Foreground="#D32F2F"/>
+                                    </StackPanel>
+
+                                    <DataGrid ItemsSource="{Binding MissingMods}"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True"
+                                              CanUserResizeColumns="True"
+                                              GridLinesVisibility="All"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Nom du Mod" Binding="{Binding DisplayName}" Width="250" MinWidth="100" CanUserResize="True" />
+                                            <DataGridTextColumn Header="Steam ID" Binding="{Binding SteamId}" Width="130" CanUserResize="True" />
+                                            <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="90" CanUserResize="True" />
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </DockPanel>
+                            </Border>
+
+                        </Grid>
+                    </DockPanel>
                 </DataTemplate>
             </TabControl.ContentTemplate>
         </TabControl>
