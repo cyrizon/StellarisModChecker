@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using StellarisModChecker.Data;
 using StellarisModChecker.Models;
 using StellarisModChecker.Services;
-using StellarisModChecker.Services.Detection;
 
 namespace StellarisModChecker.ViewModels;
 

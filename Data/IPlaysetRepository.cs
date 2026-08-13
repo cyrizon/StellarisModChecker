@@ -1,6 +1,7 @@
-using System;
 using System.Collections.Generic;
 using StellarisModChecker.Models;
+
+namespace StellarisModChecker.Data;
 
 public interface IPlaysetRepository
 {

@@ -1,12 +1,11 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using Serilog;
+using StellarisModChecker.Data;
 using StellarisModChecker.Models;
 
-namespace StellarisModChecker.Services.Detection;
+namespace StellarisModChecker.Services;
 
 public class PlaysetDetectionService
 {

@@ -8,7 +8,6 @@ using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using StellarisModChecker.Models;
 using StellarisModChecker.Services;
-using StellarisModChecker.Services.Detection;
 
 namespace StellarisModChecker.ViewModels;
 

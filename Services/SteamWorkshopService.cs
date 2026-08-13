@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
 using Serilog;
+using StellarisModChecker.Data;
 
 namespace StellarisModChecker.Services;
 
@@ -51,7 +52,7 @@ public class SteamWorkshopService
                 int randomDelay = Random.Shared.Next(10000, 15001);
                 Log.Warning("[Steam Scraping] Rate Limit 429 détecté pour {ModId}. Pause de sécurité de {Delay}ms...", modSteamId, randomDelay);
                 await Task.Delay(randomDelay);
-                return requiredIds; // On évite de crash, le mod sera retenté plus tard
+                return requiredIds;
             }
 
             if (!response.IsSuccessStatusCode)

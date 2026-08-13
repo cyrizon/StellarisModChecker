@@ -4,6 +4,8 @@ using Microsoft.Data.Sqlite;
 using Serilog;
 using StellarisModChecker.Models;
 
+namespace StellarisModChecker.Data;
+
 public class PlaysetRepository : IPlaysetRepository
 {
     private readonly string _playsetPath;

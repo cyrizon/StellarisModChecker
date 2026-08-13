@@ -4,7 +4,7 @@ using System.IO;
 using Microsoft.Data.Sqlite;
 using Serilog;
 
-namespace StellarisModChecker.Services;
+namespace StellarisModChecker.Data;
 
 public class ModCacheRepository
 {
