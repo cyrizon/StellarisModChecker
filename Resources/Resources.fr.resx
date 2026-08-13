@@ -1,0 +1,80 @@
+<root>
+    <resheader name="resmimetype">
+        <value>text/microsoft-resx</value>
+    </resheader>
+    <resheader name="version">
+        <value>1.3</value>
+    </resheader>
+    <resheader name="reader">
+        <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <resheader name="writer">
+        <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    </resheader>
+    <data name="CheckUpdates" xml:space="preserve">
+        <value>Vérifier les MAJ</value>
+    </data>
+    <data name="ColActive" xml:space="preserve">
+        <value>Actif</value>
+    </data>
+    <data name="ColModName" xml:space="preserve">
+        <value>Nom du Mod</value>
+    </data>
+    <data name="ColPosition" xml:space="preserve">
+        <value>#</value>
+    </data>
+    <data name="ColRequiredBy" xml:space="preserve">
+        <value>Requis par</value>
+    </data>
+    <data name="ColSteamId" xml:space="preserve">
+        <value>Steam ID</value>
+    </data>
+    <data name="ColVersion" xml:space="preserve">
+        <value>Version</value>
+    </data>
+    <data name="InstallUpdate" xml:space="preserve">
+        <value>Installer la MAJ</value>
+    </data>
+    <data name="LoadMods" xml:space="preserve">
+        <value>Charger les mods</value>
+    </data>
+    <data name="MissingModsHeader" xml:space="preserve">
+        <value>Mods Manquants / Problématiques</value>
+    </data>
+    <data name="OpenInSteam" xml:space="preserve">
+        <value>Ouvrir dans Steam</value>
+    </data>
+    <data name="PlaysetLabel" xml:space="preserve">
+        <value>Playset :</value>
+    </data>
+    <data name="PlaysetModsHeader" xml:space="preserve">
+        <value>Mods du Playset</value>
+    </data>
+    <data name="VerifyAgain" xml:space="preserve">
+        <value>Vérifier à nouveau</value>
+    </data>
+    <data name="WelcomeMessage" xml:space="preserve">
+        <value>Bienvenue dans Stellaris Mod Checker !</value>
+    </data>
+    <data name="SelectedPlaysetFormat" xml:space="preserve">
+        <value>Playset sélectionné : {0}</value>
+    </data>
+    <data name="InitError" xml:space="preserve">
+        <value>rreur lors de l'initialisation : vérifiez les fichiers de log.</value>
+    </data>
+    <data name="UpdateAvailableFormat" xml:space="preserve">
+        <value>Mise à jour {0} disponible !</value>
+    </data>
+    <data name="UpdateChecking" xml:space="preserve">
+        <value>Vérification des mises à jour...</value>
+    </data>
+    <data name="UpdateDownloading" xml:space="preserve">
+        <value>Téléchargement de la mise à jour...</value>
+    </data>
+    <data name="UpdateLatest" xml:space="preserve">
+        <value>Vous avez la dernière version.</value>
+    </data>
+    <data name="UpdateError" xml:space="preserve">
+        <value>Erreur lors du téléchargement de la mise à jour.</value>
+    </data>
+</root>

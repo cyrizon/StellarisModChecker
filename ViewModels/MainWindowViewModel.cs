@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
+using System.Resources;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -15,9 +17,15 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly UpdateService _updateService;
     private PlaysetDetectionService? _playsetDetectionService;
+    
+    public LocalizationService Localizer => LocalizationService.Instance;
+    public List<LanguageItem> Languages => LocalizationService.Instance.AvailableLanguages;
 
     [ObservableProperty]
-    private string _welcomeMessage = "Welcome to Stellaris Mod Checker!";
+    private LanguageItem _selectedLanguage;
+
+    [ObservableProperty]
+    private string _welcomeMessage = Resources.Resources.WelcomeMessage;
 
     [ObservableProperty]
     private string _currentVersion;
@@ -44,12 +52,34 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Log.Information("Initialisation du MainWindowViewModel (Version app: {Version})", _updateService?.CurrentVersion ?? "Inconnue");
         
+        string currentCulture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        _selectedLanguage = Languages.FirstOrDefault(l => l.Code == currentCulture) ?? Languages.First();
+        
         _updateService = new UpdateService();
         _currentVersion = _updateService.CurrentVersion;
         
         _ = CheckForUpdatesAsync();
 
         _ = InitializeAsync();
+    }
+    
+    partial void OnSelectedLanguageChanged(LanguageItem value)
+    {
+        if (value != null)
+        {
+            LocalizationService.Instance.ChangeLanguage(value.Code);
+
+            if (SelectedPlayset != null)
+            {
+                WelcomeMessage = string.Format(Resources.Resources.SelectedPlaysetFormat, SelectedPlayset.Name);
+            }
+            else
+            {
+                WelcomeMessage = Resources.Resources.WelcomeMessage;
+            }
+
+            UpdateMessage = Resources.Resources.UpdateLatest;
+        }
     }
     
     private async Task InitializeAsync()
@@ -68,7 +98,7 @@ public partial class MainWindowViewModel : ViewModelBase
         catch (Exception ex)
         {
             Log.Fatal(ex, "Échec critique lors de l'initialisation de l'application dans MainWindowViewModel");
-            WelcomeMessage = "Erreur lors de l'initialisation : vérifiez les fichiers de log.";
+            WelcomeMessage = Resources.Resources.InitError;
         }
     }
 
@@ -110,7 +140,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (value != null)
         {
             Log.Debug("Playset sélectionné dans l'UI : '{PlaysetName}' (ID: {PlaysetId})", value.Name, value.Id);
-            WelcomeMessage = $"Selected playset : {value.Name}";
+            WelcomeMessage = string.Format(Resources.Resources.SelectedPlaysetFormat, value.Name);
         }
     }
 
@@ -148,18 +178,18 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private async Task CheckForUpdatesAsync()
     {
-        UpdateMessage = "Vérification des mises à jour...";
+        UpdateMessage = Resources.Resources.UpdateChecking;
         var updateInfo = await _updateService.CheckForUpdatesAsync();
 
         if (updateInfo != null)
         {
             UpdateAvailable = true;
-            UpdateMessage = $"Mise à jour {updateInfo.TargetFullRelease.Version} disponible !";
+            UpdateMessage = string.Format(Resources.Resources.UpdateAvailableFormat, updateInfo.TargetFullRelease.Version);
             Log.Information("Notification de mise à jour affichée pour la version {Version}", updateInfo.TargetFullRelease.Version);
         }
         else
         {
-            UpdateMessage = "Vous avez la dernière version.";
+            UpdateMessage = Resources.Resources.UpdateLatest;
         }
     }
 
@@ -167,7 +197,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private async Task InstallUpdateAsync()
     {
         Log.Information("Lancement du processus d'installation de la mise à jour...");
-        UpdateMessage = "Téléchargement de la mise à jour...";
+        UpdateMessage = Resources.Resources.UpdateDownloading;
         
         var updateInfo = await _updateService.CheckForUpdatesAsync();
         if (updateInfo != null)
@@ -175,7 +205,7 @@ public partial class MainWindowViewModel : ViewModelBase
             bool success = await _updateService.DownloadAndInstallAsync(updateInfo);
             if (!success)
             {
-                UpdateMessage = "Erreur lors du téléchargement de la mise à jour.";
+                UpdateMessage = Resources.Resources.UpdateError;
             }
         }
     }
