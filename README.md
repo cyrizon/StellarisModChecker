@@ -11,7 +11,7 @@
 
 ## Key Features
 
-- **Automatic Playset Detection**: Instantly reads your local Paradox Launcher SQLite database (`launcher-v2.sqlite`) on Windows, Linux, and macOS.
+- **Automatic Playset Detection**: Instantly reads your local Paradox Launcher SQLite database (`launcher-v2.sqlite`) on Windows, Linux, **macOS IS NOT SUPPORTED CURRENTLY**.
 - **Deep Dependency Cascading**: Scans every mod in your active playset and recursively resolves all required dependencies from the Steam Workshop.
 - **Local SQLite Caching**: Caches previously scanned mod dependencies locally for instantaneous load times and zero Steam API rate-limiting issues.
 - **Remote Database Sync**: Automatically syncs with a database maintained by myself on startup to download known mod dependency trees offline.
