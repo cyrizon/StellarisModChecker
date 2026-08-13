@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -55,7 +57,9 @@ public partial class PlaysetTabViewModel : ViewModelBase
     {
         if (IsChecking) return;
         IsChecking = true;
-
+        
+        LoadMods();
+        
         MissingMods.Clear();
 
         // HashSet pour vérifier si un ID est déjà dans notre playset (recherche en O(1))
@@ -106,5 +110,34 @@ public partial class PlaysetTabViewModel : ViewModelBase
         }
 
         IsChecking = false;
+    }
+
+    [RelayCommand]
+    private void OpenInSteam(Mod? mod)
+    {
+        if (mod == null || string.IsNullOrEmpty(mod.SteamId)) return;
+
+        string url = $"steam://openurl/https://steamcommunity.com/sharedfiles/filedetails/?id={mod.SteamId}";
+        
+        try
+        {
+            // Ouverture de l'URL via la commande système selon l'OS
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Process.Start("xdg-open", url);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Process.Start("open", url);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Console.WriteLine($"Erreur lors de l'ouverture de Steam : {ex.Message}");
+        }
     }
 }

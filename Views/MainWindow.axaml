@@ -82,6 +82,20 @@
                                               GridLinesVisibility="All"
                                               ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                               ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                        
+                                        <!-- Menu contextuel (Clic droit sur une ligne) -->
+                                        <DataGrid.Styles>
+                                            <Style Selector="DataGridRow">
+                                                <Setter Property="ContextMenu">
+                                                    <ContextMenu x:DataType="models:Mod">
+                                                        <MenuItem Header="Ouvrir dans Steam" 
+                                                                  Command="{Binding $parent[DataGrid].((vm:PlaysetTabViewModel)DataContext).OpenInSteamCommand}" 
+                                                                  CommandParameter="{Binding .}"/>
+                                                    </ContextMenu>
+                                                </Setter>
+                                            </Style>
+                                        </DataGrid.Styles>
+                                        
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="#" Binding="{Binding Position}" Width="45" CanUserResize="True" />
                                             <DataGridCheckBoxColumn Header="Actif" Binding="{Binding IsEnabled}" Width="55" CanUserResize="True" />
@@ -111,6 +125,20 @@
                                               GridLinesVisibility="All"
                                               ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                               ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                        
+                                        <!-- Menu contextuel (Clic droit sur une ligne) -->
+                                        <DataGrid.Styles>
+                                            <Style Selector="DataGridRow">
+                                                <Setter Property="ContextMenu">
+                                                    <ContextMenu x:DataType="models:Mod">
+                                                        <MenuItem Header="Ouvrir dans Steam" 
+                                                                  Command="{Binding $parent[DataGrid].((vm:PlaysetTabViewModel)DataContext).OpenInSteamCommand}" 
+                                                                  CommandParameter="{Binding .}"/>
+                                                    </ContextMenu>
+                                                </Setter>
+                                            </Style>
+                                        </DataGrid.Styles>
+                                        
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Nom du Mod" Binding="{Binding DisplayName}" Width="250" MinWidth="100" CanUserResize="True" />
                                             <DataGridTextColumn Header="Steam ID" Binding="{Binding SteamId}" Width="130" CanUserResize="True" />
