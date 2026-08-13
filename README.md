@@ -11,7 +11,7 @@
 
 ## Key Features
 
-- **Automatic Playset Detection**: Instantly reads your local Paradox Launcher SQLite database (`launcher-v2.sqlite`) on Windows, Linux, **macOS IS NOT SUPPORTED CURRENTLY**.
+- **Automatic Playset Detection**: Instantly reads your local Paradox Launcher SQLite database (`launcher-v2.sqlite`) on Windows, Linux (*macOS is not supported currently*).
 - **Deep Dependency Cascading**: Scans every mod in your active playset and recursively resolves all required dependencies from the Steam Workshop.
 - **Local SQLite Caching**: Caches previously scanned mod dependencies locally for instantaneous load times and zero Steam API rate-limiting issues.
 - **Remote Database Sync**: Automatically syncs with a database maintained by myself on startup to download known mod dependency trees offline.
@@ -31,11 +31,11 @@
 
 Stellaris Mod Checker natively detects game configurations on:
 
-| Operating System | Default Stellaris Path |
-| :--- | :--- |
-| **Windows** | `%USERPROFILE%\Documents\Paradox Interactive\Stellaris` |
-| **Linux** | `~/.local/share/Paradox Interactive/Stellaris` |
-| **macOS** | `~/Library/Application Support/Paradox Interactive/Stellaris` |
+| Operating System | Default Stellaris Path | Status |
+| :--- | :--- | :--- |
+| **Windows** | `%USERPROFILE%\Documents\Paradox Interactive\Stellaris` | Supported |
+| **Linux** | `~/.local/share/Paradox Interactive/Stellaris` | Supported |
+| **macOS** | `~/Library/Application Support/Paradox Interactive/Stellaris` | Not currently supported |
 
 ---
 
@@ -43,6 +43,18 @@ Stellaris Mod Checker natively detects game configurations on:
 
 ### Download Binary
 Grab the latest installer or portable executable for your operating system from the [**Releases Page**](https://github.com/cyrizon/StellarisModChecker/releases).
+
+#### **Windows**
+Run `StellarisModChecker-win-Setup.exe` to install and automatically keep the app updated.
+
+#### **Linux (AppImage)**
+1. Download `StellarisModChecker-linux-x64.AppImage` from the Releases page.
+2. Make it executable via terminal:
+```bash
+chmod +x StellarisModChecker-linux-x64.AppImage
+```
+(Or right-click the file $\rightarrow$ Properties $\rightarrow$ Permissions $\rightarrow$ Check "Executable as program").
+3. Double-click or run ./StellarisModChecker-linux-x64.AppImage to launch.
 
 ### Building from Source
 
