@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
@@ -88,5 +90,76 @@ public class SteamWorkshopService
         }
 
         return requiredIds;
+    }
+    
+    /// <summary>
+    /// Récupère les titres et détails de plusieurs mods via l'API officielle de Steam (1 seule requête).
+    /// </summary>
+    public async Task<Dictionary<string, (string Title, string VersionTag)>> GetModDetailsBatchAsync(IEnumerable<string> modIds)
+    {
+        var result = new Dictionary<string, (string Title, string VersionTag)>();
+        var idsList = modIds.Distinct().ToList();
+
+        if (idsList.Count == 0) return result;
+
+        try
+        {
+            var formData = new List<KeyValuePair<string, string>>
+            {
+                new("itemcount", idsList.Count.ToString())
+            };
+
+            for (int i = 0; i < idsList.Count; i++)
+            {
+                formData.Add(new KeyValuePair<string, string>($"publishedfileids[{i}]", idsList[i]));
+            }
+
+            var content = new FormUrlEncodedContent(formData);
+            using var response = await _httpClient.PostAsync("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/", content);
+
+            if (!response.IsSuccessStatusCode) return result;
+
+            string jsonString = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(jsonString);
+
+            if (doc.RootElement.TryGetProperty("response", out var resp) &&
+                resp.TryGetProperty("publishedfiledetails", out var details))
+            {
+                foreach (var item in details.EnumerateArray())
+                {
+                    string id = item.TryGetProperty("publishedfileid", out var idProp) ? idProp.GetString() ?? "" : "";
+                    string title = item.TryGetProperty("title", out var titleProp) ? titleProp.GetString() ?? "" : "";
+
+                    if (string.IsNullOrEmpty(id)) continue;
+
+                    // Extraction éventuelle de la version de Stellaris dans les tags (ex: "4.4.*")
+                    string versionTag = "Non installé";
+                    if (item.TryGetProperty("tags", out var tags))
+                    {
+                        foreach (var tagObj in tags.EnumerateArray())
+                        {
+                            if (tagObj.TryGetProperty("tag", out var tagVal))
+                            {
+                                string tagStr = tagVal.GetString() ?? "";
+                                // Détection si le tag ressemble à une version (ex: 3.12, 4.4.*, etc.)
+                                if (System.Text.RegularExpressions.Regex.IsMatch(tagStr, @"^\d+\.\d+"))
+                                {
+                                    versionTag = tagStr;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    result[id] = (string.IsNullOrEmpty(title) ? $"Mod #{id}" : title, versionTag);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors de la récupération des titres Steam : {ex.Message}");
+        }
+
+        return result;
     }
 }

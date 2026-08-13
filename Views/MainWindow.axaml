@@ -114,7 +114,7 @@
                             <Border Grid.Column="2" BorderBrush="#D32F2F" BorderThickness="1" Padding="5" CornerRadius="4">
                                 <DockPanel>
                                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="5" Margin="5,0,0,5">
-                                        <TextBlock Text="Mods Manquants / Problématiques" FontWeight="SemiBold" Foreground="#D32F2F"/>
+                                        <TextBlock Text="Mods Manquants" FontWeight="SemiBold" Foreground="#D32F2F"/>
                                         <TextBlock Text="{Binding MissingMods.Count, StringFormat='({0})'}" Foreground="#D32F2F"/>
                                     </StackPanel>
 
@@ -128,7 +128,8 @@
                                         
                                         <!-- Menu contextuel (Clic droit sur une ligne) -->
                                         <DataGrid.Styles>
-                                            <Style Selector="DataGridRow">
+                                            <Style Selector="DataGridRow" x:DataType="models:Mod">
+                                                <Setter Property="ToolTip.Tip" Value="{Binding RequiredByToolTipText}" />
                                                 <Setter Property="ContextMenu">
                                                     <ContextMenu x:DataType="models:Mod">
                                                         <MenuItem Header="Ouvrir dans Steam" 
@@ -141,6 +142,7 @@
                                         
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Nom du Mod" Binding="{Binding DisplayName}" Width="250" MinWidth="100" CanUserResize="True" />
+                                            <DataGridTextColumn Header="Requis par" Binding="{Binding RequiredBySummary}" Width="160" CanUserResize="True" />
                                             <DataGridTextColumn Header="Steam ID" Binding="{Binding SteamId}" Width="130" CanUserResize="True" />
                                             <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="90" CanUserResize="True" />
                                         </DataGrid.Columns>

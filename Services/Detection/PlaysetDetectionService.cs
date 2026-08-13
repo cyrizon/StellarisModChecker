@@ -11,7 +11,7 @@ public class PlaysetDetectionService
 {
     private readonly IPlaysetRepository _playsetRepository;
 
-    public string DetectedOS { get; private set; }
+    public string DetectedOS { get; set; } = String.Empty;
     
     private const string PlaysetFileName = "launcher-v2.sqlite";
 

@@ -57,56 +57,94 @@ public partial class PlaysetTabViewModel : ViewModelBase
     {
         if (IsChecking) return;
         IsChecking = true;
-        
+
         LoadMods();
-        
         MissingMods.Clear();
 
-        // HashSet pour vérifier si un ID est déjà dans notre playset (recherche en O(1))
-        var installedModIds = new HashSet<string>(
-            Mods.Where(m => !string.IsNullOrEmpty(m.SteamId)).Select(m => m.SteamId)
-        );
+        // Dictionnaire rapide : SteamId -> Objet Mod du playset
+        var installedModsDict = Mods
+            .Where(m => !string.IsNullOrEmpty(m.SteamId))
+            .GroupBy(m => m.SteamId)
+            .ToDictionary(g => g.Key, g => g.First());
 
-        // File d'attente pour la descente en cascade
+        var installedModIds = new HashSet<string>(installedModsDict.Keys);
+
         var toCheckQueue = new Queue<string>(installedModIds);
-        
-        // Cache local des IDs déjà vérifiés sur Steam pendant cette session
         var scannedSteamIds = new HashSet<string>();
 
         while (toCheckQueue.Count > 0)
         {
             string currentId = toCheckQueue.Dequeue();
 
-            // Si déjà scanné sur Steam, on passe
             if (scannedSteamIds.Contains(currentId)) continue;
             scannedSteamIds.Add(currentId);
 
-            // Scraping avec temporisation auto (400ms)
+            // Nom du mod parent s'il est dans le playset local (pour un affichage clair)
+            string parentModName = installedModsDict.TryGetValue(currentId, out var parentMod)
+                ? parentMod.DisplayName
+                : $"Mod #{currentId}";
+
             List<string> requiredIds = await _steamService.GetRequiredItemIdsAsync(currentId);
 
             foreach (var reqId in requiredIds)
             {
-                // Si le mod requis n'est PAS dans le playset local
+                // Si le mod requis n'est PAS installé dans le playset
                 if (!installedModIds.Contains(reqId))
                 {
-                    if (!MissingMods.Any(m => m.SteamId == reqId))
+                    var existingMissingMod = MissingMods.FirstOrDefault(m => m.SteamId == reqId);
+
+                    if (existingMissingMod == null)
                     {
-                        MissingMods.Add(new Mod
+                        // Création du mod manquant
+                        var newMissingMod = new Mod
                         {
                             SteamId = reqId,
-                            DisplayName = $"Mod Requis #{reqId}",
-                            Version = "Manquant",
+                            DisplayName = $"Chargement du nom... (#{reqId})",
+                            Version = "Non installé",
                             IsEnabled = false
-                        });
+                        };
+                        
+                        newMissingMod.RequiredByModIds.Add(currentId);
+                        newMissingMod.RequiredByModNames.Add(parentModName);
+
+                        MissingMods.Add(newMissingMod);
+                    }
+                    else
+                    {
+                        // S'il avait déjà été identifié comme manquant par un AUTRE mod, on ajoute ce nouveau parent !
+                        if (!existingMissingMod.RequiredByModIds.Contains(currentId))
+                        {
+                            existingMissingMod.RequiredByModIds.Add(currentId);
+                            existingMissingMod.RequiredByModNames.Add(parentModName);
+                        }
                     }
                 }
 
-                // Pour la descente en cascade : on vérifie aussi les dépendances de ce mod requis
+                // Poursuite de la cascade
                 if (!scannedSteamIds.Contains(reqId))
                 {
                     toCheckQueue.Enqueue(reqId);
                 }
             }
+        }
+
+        // Enrichissement final des noms via l'API Batch de Steam
+        if (MissingMods.Count > 0)
+        {
+            var missingIds = MissingMods.Select(m => m.SteamId);
+            var detailsDict = await _steamService.GetModDetailsBatchAsync(missingIds);
+
+            foreach (var missingMod in MissingMods)
+            {
+                if (detailsDict.TryGetValue(missingMod.SteamId, out var info))
+                {
+                    missingMod.DisplayName = info.Title;
+                    missingMod.Version = info.VersionTag;
+                }
+            }
+
+            // Rafraîchir l'ObservableCollection
+            MissingMods = new ObservableCollection<Mod>(MissingMods);
         }
 
         IsChecking = false;
