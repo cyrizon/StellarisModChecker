@@ -53,7 +53,9 @@ Run `StellarisModChecker-win-Setup.exe` to install and automatically keep the ap
 ```bash
 chmod +x StellarisModChecker-linux-x64.AppImage
 ```
+
 (Or right-click the file $\rightarrow$ Properties $\rightarrow$ Permissions $\rightarrow$ Check "Executable as program").
+
 3. Double-click or run ./StellarisModChecker-linux-x64.AppImage to launch.
 
 ### Building from Source
