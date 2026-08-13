@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Serilog;
 using StellarisModChecker.Models;
 
 namespace StellarisModChecker.Services.Detection;
@@ -23,7 +24,9 @@ public class PlaysetDetectionService
         SearchPlayset();
         if (string.IsNullOrEmpty(_playsetPath))
         {
-            throw new FileNotFoundException("Playset file not found.");
+            var ex = new FileNotFoundException($"Le fichier {PlaysetFileName} n'a pas été trouvé pour l'OS {DetectedOS}.");
+            Log.Error(ex, "Échec de l'initialisation de PlaysetDetectionService.");
+            throw ex;
         }
         _playsetRepository = new PlaysetRepository(_playsetPath);
     }
@@ -31,7 +34,6 @@ public class PlaysetDetectionService
     
     private void DetectOS()
     {
-        // Logic to detect the operating system
         if (OperatingSystem.IsWindows())
         {
             DetectedOS = "Windows";
@@ -46,9 +48,11 @@ public class PlaysetDetectionService
         }
         else
         {
-            throw new NotSupportedException("The detected operating system is not supported.");
+            var ex = new NotSupportedException("L'système d'exploitation détecté n'est pas supporté.");
+            Log.Fatal(ex, "OS non supporté.");
+            throw ex;
         }
-        Console.WriteLine($"Detected OS: {DetectedOS}");
+        Log.Information("OS détecté : {DetectedOS}", DetectedOS);
     }
 
     private void SearchPlayset()
@@ -57,17 +61,27 @@ public class PlaysetDetectionService
         switch (DetectedOS)
         {
             case "Windows":
-                playsetDirectory = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\Paradox Interactive\Stellaris");
+                playsetDirectory = new DirectoryInfo(Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "Paradox Interactive", "Stellaris"));
                 break;
             case "Linux":
-                playsetDirectory = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + @"/.local/share/Paradox Interactive/Stellaris");
+                playsetDirectory = new DirectoryInfo(Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    ".local", "share", "Paradox Interactive", "Stellaris"));
                 break;
             case "macOS":
-                playsetDirectory = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Personal) + @"/Library/Application Support/Paradox Interactive/Stellaris");
+                playsetDirectory = new DirectoryInfo(Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Personal),
+                    "Library", "Application Support", "Paradox Interactive", "Stellaris"));
                 break;
             default:
-                throw new NotSupportedException("The detected operating system is not supported for playset search.");
+                var ex = new NotSupportedException("OS non supporté pour la recherche de playset.");
+                Log.Error(ex, "Recherche impossible pour OS: {OS}", DetectedOS);
+                throw ex;
         }
+        
+        Log.Information("Recherche du fichier {FileName} dans {DirectoryPath}", PlaysetFileName, playsetDirectory.FullName);
 
         if (playsetDirectory.Exists)
         {
@@ -75,12 +89,12 @@ public class PlaysetDetectionService
             foreach (FileInfo playsetFile in playsetFiles)
             {
                 _playsetPath = playsetFile.FullName;
-                Console.WriteLine($"Found playset file: {playsetFile.FullName}");
+                Log.Information("Fichier de playset trouvé : {Path}", _playsetPath);
             }
         }
         else
         {
-            Console.WriteLine("Playset directory does not exist.");
+            Log.Warning("Le dossier du playset n'existe pas à l'emplacement : {DirectoryPath}", playsetDirectory.FullName);
         }
     }
 

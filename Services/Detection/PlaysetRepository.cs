@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
+using Serilog;
 using StellarisModChecker.Models;
 
 public class PlaysetRepository : IPlaysetRepository
@@ -15,28 +16,31 @@ public class PlaysetRepository : IPlaysetRepository
 
     public void LoadPlaysets()
     {
-        using (SqliteConnection db = new SqliteConnection($"Filename={_playsetPath}"))
+        try
         {
+            using var db = new SqliteConnection($"Filename={_playsetPath}");
             db.Open();
 
-            var playsets = new Dictionary<string, string>();
-
+            var newPlaysets = new Dictionary<string, string>();
             string selectPlaysetsQuery = "SELECT id, name FROM playsets";
-            using (SqliteCommand selectCommand = new SqliteCommand(selectPlaysetsQuery, db))
+
+            using (var selectCommand = new SqliteCommand(selectPlaysetsQuery, db))
+            using (var query = selectCommand.ExecuteReader())
             {
-                using (SqliteDataReader query = selectCommand.ExecuteReader())
+                while (query.Read())
                 {
-                    while (query.Read())
-                    {
-                        string id = query.GetString(0);
-                        string playsetName = query.GetString(1);
-                        playsets.Add(id, playsetName);
-                    }
+                    string id = query.GetString(0);
+                    string playsetName = query.GetString(1);
+                    newPlaysets.Add(id, playsetName);
                 }
             }
-            Console.WriteLine($"Loaded {playsets.Count} playsets from the database.");
-            this.playsets = playsets;
-            db.Close();
+
+            this.playsets = newPlaysets;
+            Log.Information("{Count} playset(s) chargé(s) depuis la base de données Stellaris", playsets.Count);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Erreur lors de la lecture des playsets dans {DbPath}", _playsetPath);
         }
     }
 
@@ -54,8 +58,9 @@ public class PlaysetRepository : IPlaysetRepository
     {
         var mods = new List<Mod>();
 
-        using (SqliteConnection db = new SqliteConnection($"Filename={_playsetPath}"))
+        try
         {
+            using var db = new SqliteConnection($"Filename={_playsetPath}");
             db.Open();
 
             string selectModsQuery = @"
@@ -66,26 +71,27 @@ public class PlaysetRepository : IPlaysetRepository
                 ORDER BY pm.position ASC
             ";
 
-            using (SqliteCommand selectCommand = new SqliteCommand(selectModsQuery, db))
-            {
-                selectCommand.Parameters.AddWithValue("@PlaysetId", playsetId);
+            using var selectCommand = new SqliteCommand(selectModsQuery, db);
+            selectCommand.Parameters.AddWithValue("@PlaysetId", playsetId);
 
-                using (SqliteDataReader query = selectCommand.ExecuteReader())
+            using var query = selectCommand.ExecuteReader();
+            while (query.Read())
+            {
+                mods.Add(new Mod
                 {
-                    while (query.Read())
-                    {
-                        mods.Add(new Mod
-                        {
-                            SteamId = query.IsDBNull(0) ? "" : query.GetString(0),
-                            DisplayName = query.IsDBNull(1) ? "Mod sans nom" : query.GetString(1),
-                            Version = query.IsDBNull(2) ? "N/A" : query.GetString(2),
-                            IsEnabled = !query.IsDBNull(3) && query.GetBoolean(3),
-                            Position = query.IsDBNull(4) ? null : query.GetInt32(4)
-                        });
-                    }
-                }
+                    SteamId = query.IsDBNull(0) ? "" : query.GetString(0),
+                    DisplayName = query.IsDBNull(1) ? "Mod sans nom" : query.GetString(1),
+                    Version = query.IsDBNull(2) ? "N/A" : query.GetString(2),
+                    IsEnabled = !query.IsDBNull(3) && query.GetBoolean(3),
+                    Position = query.IsDBNull(4) ? null : query.GetInt32(4)
+                });
             }
-            db.Close();
+
+            Log.Debug("Récupération de {Count} mods pour le playset ID: {PlaysetId}", mods.Count, playsetId);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Erreur lors de la récupération des mods du playset {PlaysetId}", playsetId);
         }
 
         return mods;

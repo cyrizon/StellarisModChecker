@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
+using Serilog;
 
 namespace StellarisModChecker.Services;
 
@@ -16,7 +17,6 @@ public class SteamWorkshopService
     private readonly ModCacheRepository _cacheRepository;
     private readonly int _delayMs;
 
-    // delayMs = 400ms par défaut (environ 2.5 requêtes / sec), un rythme très doux pour Steam
     public SteamWorkshopService(ModCacheRepository cacheRepository, int delayMs = 800)
     {
         _cacheRepository = cacheRepository;
@@ -30,33 +30,35 @@ public class SteamWorkshopService
     /// </summary>
     public async Task<List<string>> GetRequiredItemIdsAsync(string modSteamId)
     {
-        // 1. VÉRIFICATION DANS LA BDD LOCALE (0 ms)
         if (_cacheRepository.IsModCached(modSteamId))
         {
-            Console.WriteLine($"[Cache HIT] Dépendances lues en BDD pour le mod {modSteamId}");
+            Log.Debug("[Cache HIT] Dépendances lues en BDD locale pour le mod {ModId}", modSteamId);
             return _cacheRepository.GetCachedDependencies(modSteamId);
         }
-
-        // 2. SINON : APPEL À STEAM (Cache MISS)
-        Console.WriteLine($"[Cache MISS] Scraping de Steam pour le mod {modSteamId}...");
+        
+        Log.Information("[Cache MISS] Scraping du Workshop Steam pour le mod {ModId}...", modSteamId);
         var requiredIds = new List<string>();
         string url = $"https://steamcommunity.com/sharedfiles/filedetails/?id={modSteamId}";
 
         try
         {
-            await Task.Delay(_delayMs); // Politesse vis-à-vis de Steam
+            await Task.Delay(_delayMs);
 
             using var response = await _httpClient.GetAsync(url);
 
             if (response.StatusCode == HttpStatusCode.TooManyRequests)
             {
                 int randomDelay = Random.Shared.Next(10000, 15001);
-                Console.WriteLine($"[Rate Limit 429] Pause forcée de {randomDelay / 1000} secondes pour l'IP...");
+                Log.Warning("[Steam Scraping] Rate Limit 429 détecté pour {ModId}. Pause de sécurité de {Delay}ms...", modSteamId, randomDelay);
                 await Task.Delay(randomDelay);
                 return requiredIds; // On évite de crash, le mod sera retenté plus tard
             }
 
-            if (!response.IsSuccessStatusCode) return requiredIds;
+            if (!response.IsSuccessStatusCode)
+            {
+                Log.Warning("[Steam Scraping] Réponse HTTP {StatusCode} pour le mod {ModId}", response.StatusCode, modSteamId);
+                return requiredIds;
+            }
 
             string html = await response.Content.ReadAsStringAsync();
             var doc = new HtmlDocument();
@@ -81,12 +83,11 @@ public class SteamWorkshopService
                 }
             }
 
-            // 3. SAUVEGARDE DANS LA BDD LOCALE POUR LES PROCHAINES FOIS
             _cacheRepository.SaveDependencies(modSteamId, requiredIds);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erreur lors du scraping du mod {modSteamId} : {ex.Message}");
+            Log.Error(ex, "Erreur lors du scraping du mod {ModId} sur Steam", modSteamId);
         }
 
         return requiredIds;
@@ -104,6 +105,8 @@ public class SteamWorkshopService
 
         try
         {
+            Log.Information("Appel API Batch Steam pour récupérer les détails de {Count} mod(s)...", idsList.Count);
+            
             var formData = new List<KeyValuePair<string, string>>
             {
                 new("itemcount", idsList.Count.ToString())
@@ -117,7 +120,11 @@ public class SteamWorkshopService
             var content = new FormUrlEncodedContent(formData);
             using var response = await _httpClient.PostAsync("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/", content);
 
-            if (!response.IsSuccessStatusCode) return result;
+            if (!response.IsSuccessStatusCode)
+            {
+                Log.Warning("Erreur HTTP {StatusCode} lors de l'appel API Batch Steam", response.StatusCode);
+                return result;
+            }
 
             string jsonString = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(jsonString);
@@ -132,7 +139,6 @@ public class SteamWorkshopService
 
                     if (string.IsNullOrEmpty(id)) continue;
 
-                    // Extraction éventuelle de la version de Stellaris dans les tags (ex: "4.4.*")
                     string versionTag = "Non installé";
                     if (item.TryGetProperty("tags", out var tags))
                     {
@@ -141,8 +147,7 @@ public class SteamWorkshopService
                             if (tagObj.TryGetProperty("tag", out var tagVal))
                             {
                                 string tagStr = tagVal.GetString() ?? "";
-                                // Détection si le tag ressemble à une version (ex: 3.12, 4.4.*, etc.)
-                                if (System.Text.RegularExpressions.Regex.IsMatch(tagStr, @"^\d+\.\d+"))
+                                if (Regex.IsMatch(tagStr, @"^\d+\.\d+"))
                                 {
                                     versionTag = tagStr;
                                     break;
@@ -157,7 +162,7 @@ public class SteamWorkshopService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erreur lors de la récupération des titres Steam : {ex.Message}");
+            Log.Error(ex, "Erreur lors de la récupération des détails des mods via l'API Batch Steam");
         }
 
         return result;

@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 using StellarisModChecker.Models;
 using StellarisModChecker.Services;
 using StellarisModChecker.Services.Detection;
@@ -50,6 +51,7 @@ public partial class PlaysetTabViewModel : ViewModelBase
     {
         var modData = _service.GetModsForPlayset(Id);
         Mods = new ObservableCollection<Mod>(modData);
+        Log.Information("Chargement de {Count} mods pour le playset '{PlaysetName}' (ID: {PlaysetId})", Mods.Count, Header, Id);
     }
 
     [RelayCommand]
@@ -57,97 +59,115 @@ public partial class PlaysetTabViewModel : ViewModelBase
     {
         if (IsChecking) return;
         IsChecking = true;
+        
+        Log.Information("Début de la vérification des dépendances pour le playset '{PlaysetName}'", Header);
 
-        LoadMods();
-        MissingMods.Clear();
-
-        // Dictionnaire rapide : SteamId -> Objet Mod du playset
-        var installedModsDict = Mods
-            .Where(m => !string.IsNullOrEmpty(m.SteamId))
-            .GroupBy(m => m.SteamId)
-            .ToDictionary(g => g.Key, g => g.First());
-
-        var installedModIds = new HashSet<string>(installedModsDict.Keys);
-
-        var toCheckQueue = new Queue<string>(installedModIds);
-        var scannedSteamIds = new HashSet<string>();
-
-        while (toCheckQueue.Count > 0)
+        try
         {
-            string currentId = toCheckQueue.Dequeue();
+            LoadMods();
+            MissingMods.Clear();
 
-            if (scannedSteamIds.Contains(currentId)) continue;
-            scannedSteamIds.Add(currentId);
+            // Dictionnaire rapide : SteamId -> Objet Mod du playset
+            var installedModsDict = Mods
+                .Where(m => !string.IsNullOrEmpty(m.SteamId))
+                .GroupBy(m => m.SteamId)
+                .ToDictionary(g => g.Key, g => g.First());
 
-            // Nom du mod parent s'il est dans le playset local (pour un affichage clair)
-            string parentModName = installedModsDict.TryGetValue(currentId, out var parentMod)
-                ? parentMod.DisplayName
-                : $"Mod #{currentId}";
+            var installedModIds = new HashSet<string>(installedModsDict.Keys);
 
-            List<string> requiredIds = await _steamService.GetRequiredItemIdsAsync(currentId);
+            var toCheckQueue = new Queue<string>(installedModIds);
+            var scannedSteamIds = new HashSet<string>();
 
-            foreach (var reqId in requiredIds)
+            while (toCheckQueue.Count > 0)
             {
-                // Si le mod requis n'est PAS installé dans le playset
-                if (!installedModIds.Contains(reqId))
+                string currentId = toCheckQueue.Dequeue();
+
+                if (scannedSteamIds.Contains(currentId)) continue;
+                scannedSteamIds.Add(currentId);
+
+                // Nom du mod parent s'il est dans le playset local (pour un affichage clair)
+                string parentModName = installedModsDict.TryGetValue(currentId, out var parentMod)
+                    ? parentMod.DisplayName
+                    : $"Mod #{currentId}";
+
+                List<string> requiredIds = await _steamService.GetRequiredItemIdsAsync(currentId);
+
+                foreach (var reqId in requiredIds)
                 {
-                    var existingMissingMod = MissingMods.FirstOrDefault(m => m.SteamId == reqId);
-
-                    if (existingMissingMod == null)
+                    // Si le mod requis n'est PAS installé dans le playset
+                    if (!installedModIds.Contains(reqId))
                     {
-                        // Création du mod manquant
-                        var newMissingMod = new Mod
-                        {
-                            SteamId = reqId,
-                            DisplayName = $"Chargement du nom... (#{reqId})",
-                            Version = "Non installé",
-                            IsEnabled = false
-                        };
-                        
-                        newMissingMod.RequiredByModIds.Add(currentId);
-                        newMissingMod.RequiredByModNames.Add(parentModName);
+                        var existingMissingMod = MissingMods.FirstOrDefault(m => m.SteamId == reqId);
 
-                        MissingMods.Add(newMissingMod);
-                    }
-                    else
-                    {
-                        // S'il avait déjà été identifié comme manquant par un AUTRE mod, on ajoute ce nouveau parent !
-                        if (!existingMissingMod.RequiredByModIds.Contains(currentId))
+                        if (existingMissingMod == null)
                         {
-                            existingMissingMod.RequiredByModIds.Add(currentId);
-                            existingMissingMod.RequiredByModNames.Add(parentModName);
+                            // Création du mod manquant
+                            var newMissingMod = new Mod
+                            {
+                                SteamId = reqId,
+                                DisplayName = $"Chargement du nom... (#{reqId})",
+                                Version = "Non installé",
+                                IsEnabled = false
+                            };
+
+                            newMissingMod.RequiredByModIds.Add(currentId);
+                            newMissingMod.RequiredByModNames.Add(parentModName);
+
+                            MissingMods.Add(newMissingMod);
+                            Log.Debug("Mod manquant détecté : {MissingId} (Requis par '{ParentName}')", reqId,
+                                parentModName);
+                        }
+                        else
+                        {
+                            // S'il avait déjà été identifié comme manquant par un AUTRE mod, on ajoute ce nouveau parent !
+                            if (!existingMissingMod.RequiredByModIds.Contains(currentId))
+                            {
+                                existingMissingMod.RequiredByModIds.Add(currentId);
+                                existingMissingMod.RequiredByModNames.Add(parentModName);
+                            }
                         }
                     }
-                }
 
-                // Poursuite de la cascade
-                if (!scannedSteamIds.Contains(reqId))
-                {
-                    toCheckQueue.Enqueue(reqId);
+                    // Poursuite de la cascade
+                    if (!scannedSteamIds.Contains(reqId))
+                    {
+                        toCheckQueue.Enqueue(reqId);
+                    }
                 }
             }
-        }
 
-        // Enrichissement final des noms via l'API Batch de Steam
-        if (MissingMods.Count > 0)
-        {
-            var missingIds = MissingMods.Select(m => m.SteamId);
-            var detailsDict = await _steamService.GetModDetailsBatchAsync(missingIds);
-
-            foreach (var missingMod in MissingMods)
+            // Enrichissement final des noms via l'API Batch de Steam
+            if (MissingMods.Count > 0)
             {
-                if (detailsDict.TryGetValue(missingMod.SteamId, out var info))
+                Log.Information("Récupération des métadonnées Steam pour {Count} mods manquants...", MissingMods.Count);
+
+                var missingIds = MissingMods.Select(m => m.SteamId);
+                var detailsDict = await _steamService.GetModDetailsBatchAsync(missingIds);
+
+                foreach (var missingMod in MissingMods)
                 {
-                    missingMod.DisplayName = info.Title;
-                    missingMod.Version = info.VersionTag;
+                    if (detailsDict.TryGetValue(missingMod.SteamId, out var info))
+                    {
+                        missingMod.DisplayName = info.Title;
+                        missingMod.Version = info.VersionTag;
+                    }
                 }
+
+                // Rafraîchir l'ObservableCollection
+                MissingMods = new ObservableCollection<Mod>(MissingMods);
             }
 
-            // Rafraîchir l'ObservableCollection
-            MissingMods = new ObservableCollection<Mod>(MissingMods);
+            Log.Information("Vérification terminée pour '{PlaysetName}'. {Count} mod(s) manquant(s) trouvé(s).", Header,
+                MissingMods.Count);
         }
-
-        IsChecking = false;
+        catch (Exception ex)
+        { 
+            Log.Error(ex, "Erreur lors de la vérification des mods manquants pour le playset '{PlaysetName}'", Header);
+        }
+        finally
+        {
+            IsChecking = false;
+        }
     }
 
     [RelayCommand]
@@ -173,9 +193,9 @@ public partial class PlaysetTabViewModel : ViewModelBase
                 Process.Start("open", url);
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
-            Console.WriteLine($"Erreur lors de l'ouverture de Steam : {ex.Message}");
+            Log.Error(ex, "Erreur lors de l'ouverture du lien Steam pour le mod {ModId}", mod.SteamId);
         }
     }
 }
